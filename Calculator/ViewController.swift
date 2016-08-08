@@ -23,25 +23,42 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     @IBOutlet var decimalButton: UIButton!
     @IBOutlet var zeroButton: UIButton!
     
+    @IBOutlet var yearsToSaveLabel: UILabel!
+    @IBOutlet var annualInterestLabel: UILabel!
+    @IBOutlet var interestEarnedLabel: UILabel!
+    @IBOutlet var amountSavedLabel: UILabel!
+    
+    @IBOutlet var initialAmountButton: UIButton!
+    @IBOutlet var monthlyDepositButton: UIButton!
+    
+    @IBOutlet var initialAmountLabel: UILabel!
+    @IBOutlet var monthlyDepositLabel: UILabel!
+    
     @IBOutlet var pickerView: UIPickerView!
     
     var pickerData = [Int]()
     var decimalPercentages = [Int]()
+    
+    var labelToChange = "Initial Amount"
+    
+    var initialAmount: Double = 0
+    var monthlyDeposit: Double = 0
+    var years: Double = 0
+    var interestPercentage: Double = 0
+    var decimalInterestPerentage: Double = 0
+    
     let formatter = NSNumberFormatter()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(self.view.frame.size)
-      
         formatter.minimumIntegerDigits = 2
         
+        self.initialAmountButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
+        
         self.setUpPickerViewComponents()
-        // Do any additional setup after loading the view, typically from a nib.
+        
     }
-    
-    
-    
     
     func numberOfComponentsInPickerView(pickerView: UIPickerView) -> Int {
         
@@ -91,7 +108,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                 ])
             
             label.attributedText = title
-           
+            
             label.textAlignment = .Center
             
             return label
@@ -108,7 +125,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                 ])
             
             label.attributedText = title
-          
+            
             label.textAlignment = .Center
             
             return label
@@ -129,7 +146,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                     ])
                 
                 label.attributedText = title
-        
+                
                 label.textAlignment = .Center
                 
             }
@@ -138,6 +155,16 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
             
             
         }
+        
+    }
+    
+    func pickerView(pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        
+        years = Double(self.pickerView.selectedRowInComponent(0) + 1)
+        interestPercentage = Double(self.pickerView.selectedRowInComponent(1) + 1)
+        decimalInterestPerentage = Double(self.pickerView.selectedRowInComponent(2))
+        
+        self.calculate()
         
     }
     
@@ -162,11 +189,117 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         for i in 0...99 {
             
             decimalPercentages.append(i)
-          
+            
         }
-      
+        
     }
     
+    func updateUI() {
+        
+        if let initialAmountString = formatter.stringFromNumber(initialAmount) {
+            
+            self.initialAmountLabel.text = initialAmountString
+            
+        }
+        
+        self.monthlyDepositLabel.text = "\(self.monthlyDeposit)"
+        
+        let years = self.pickerView.selectedRowInComponent(0) + 1
+        
+        let interestPercentage = self.pickerView.selectedRowInComponent(1) + 1
+        
+        let decimalInterestPerentage = self.pickerView.selectedRowInComponent(2)
+        
+        if let decimalInterestPercentageString = self.formatter.stringFromNumber(decimalInterestPerentage) {
+            
+            self.yearsToSaveLabel.text = "\(years)"
+            
+            self.annualInterestLabel.text = "\(interestPercentage).\(decimalInterestPercentageString)%"
+            
+        }
+        
+    }
+    
+    func calculate() {
+        
+        let years = self.pickerView.selectedRowInComponent(0) + 1
+        let interestPercentage = self.pickerView.selectedRowInComponent(1) + 1
+        let decimalInterestPercentage = self.pickerView.selectedRowInComponent(2)
+        
+        
+        self.updateUI()
+        
+        
+    }
+    
+    @IBAction func numberTapped(sender: UIButton) {
+        
+        if let initialAmountString = formatter.stringFromNumber(initialAmount), monthlyDepositString = formatter.stringFromNumber(monthlyDeposit) {
+            
+            if self.labelToChange == "Initial Amount" {
+                
+                if initialAmountString.characters.count < 9 {
+                    
+                    self.initialAmount = (initialAmount * 10) + Double(sender.tag)
+                    
+                }
+                
+            } else {
+                
+                if monthlyDepositString.characters.count < 9 {
+                    
+                    self.monthlyDeposit = (monthlyDeposit * 10) + Double(sender.tag)
+                    
+                }
+                
+            }
+            
+            self.updateUI()
+            
+        }
+        
+    }
+    
+    @IBAction func decimalTapped(sender: UIButton) {
+        
+        print("decimal tapped")
+        
+        self.updateUI()
+        
+    }
+    
+    @IBAction func clearTapped(sender: UIButton) {
+        
+        if self.labelToChange == "Monthly Deposit" {
+            
+            self.monthlyDeposit = 0
+            
+        } else {
+            
+            self.initialAmount = 0
+            
+        }
+        
+        self.updateUI()
+        
+    }
+    
+    @IBAction func monthlyDepositButtonTapped(sender: UIButton) {
+        
+        self.initialAmountButton.backgroundColor = .clearColor()
+        self.labelToChange = "Monthly Deposit"
+        self.monthlyDepositButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
+        
+    }
+    
+    
+    @IBAction func initialAmountButtonTapped(sender: UIButton) {
+        
+        self.monthlyDepositButton.backgroundColor = .clearColor()
+        self.labelToChange = "Initial Amount"
+        self.initialAmountButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
+        
+    }
     
 }
 
