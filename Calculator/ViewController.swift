@@ -39,20 +39,42 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     var pickerData = [Int]()
     var decimalPercentages = [Int]()
     
-    var labelToChange = "Initial Amount"
+    var valueToChange = "Initial Amount"
+    
+    var initialAmountDecimalIsTapped = false
+    var monthlyDepositDecimalIsTapped = false
     
     var initialAmount: Double = 0
+    var initialAmountIntegers: Double = 0
+    var initialAmountFractionalDigits: Double = 0
+    
+    var initialAmountIntegerTaps = 0
+    var InitialAmountfractionalDigitTaps = 0
+    
     var monthlyDeposit: Double = 0
+    var monthlyDepositIntegers: Double = 0
+    var monthlyDepositFractionalDigits: Double = 0
+    
+    var monthlyDepositIntegerTaps = 0
+    var monthlyDepositFractionalDigitTaps = 0
+    
     var years: Double = 0
     var interestPercentage: Double = 0
     var decimalInterestPerentage: Double = 0
+    var annualInterest: Double = 0
     var interestEarned: Double = 0
     var amountSaved: Double = 0
     
     let formatter = NSNumberFormatter()
     
+    let initialAmountFormatter = NSNumberFormatter()
+    let monthlyDepositFormatter = NSNumberFormatter()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        self.initialAmountFormatter.minimumFractionDigits = 0
+        self.monthlyDepositFormatter.minimumFractionDigits = 0
         
         self.initialAmountButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
         
@@ -93,11 +115,12 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     func pickerView(pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusingView view: UIView?) -> UIView {
         
-        
-        
         var label = view as! UILabel!
+        
         if label == nil {
+            
             label = UILabel()
+            
         }
         
         if component == 0 {
@@ -201,7 +224,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     func updateUI() {
         
-        formatter.maximumIntegerDigits = 10
+        formatter.numberStyle = NSNumberFormatterStyle.DecimalStyle
         
         if self.initialAmount == 0 {
             
@@ -209,7 +232,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
             
         } else {
             
-            if let initialAmountString = formatter.stringFromNumber(initialAmount) {
+            if let initialAmountString = initialAmountFormatter.stringFromNumber(self.initialAmount) {
                 
                 self.initialAmountLabel.text = initialAmountString
                 
@@ -223,7 +246,11 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
             
         } else {
             
-            self.monthlyDepositLabel.text = "\(self.monthlyDeposit)"
+            if let monthlyDepositString = monthlyDepositFormatter.stringFromNumber(self.monthlyDeposit) {
+                
+                self.monthlyDepositLabel.text = monthlyDepositString
+                
+            }
             
         }
         
@@ -235,6 +262,8 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         
         let interestRate = Double(interestPercentage) + Double(decimalInterestPerentage)
         
+        formatter.maximumIntegerDigits = 10
+        
         if let interestRateString = formatter.stringFromNumber(interestRate) {
             
             self.annualInterestLabel.text = "\(interestRateString)%"
@@ -242,7 +271,20 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         }
         
         self.yearsToSaveLabel.text = "\(years)"
-
+        
+        if let interestEarnedString = formatter.stringFromNumber(interestEarned) {
+            
+            self.interestEarnedLabel.text = "$\(interestEarnedString)"
+            
+        }
+        
+        if let amountSavedString = formatter.stringFromNumber(amountSaved) {
+            
+            self.amountSavedLabel.text = "$\(amountSavedString)"
+            
+        }
+        
+        
         
     }
     
@@ -254,6 +296,9 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         
         let interestPercentage = self.pickerView.selectedRowInComponent(1) + 1
         let decimalInterestPercentage = self.pickerView.selectedRowInComponent(2)
+        
+        self.initialAmount = self.initialAmountIntegers + (self.initialAmountFractionalDigits * 0.01)
+        self.monthlyDeposit = self.monthlyDepositIntegers + (self.monthlyDepositFractionalDigits * 0.01)
         
         /*
          
@@ -271,25 +316,26 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
          t = the number of years the money is invested or borrowed for
          
          */
-        let P = Double(self.initialAmount)
         
-        print("Principal: \(P)")
+        let P = self.initialAmount
+        
+        //print("Principal: \(P)")
         
         let r: Double = (Double(interestPercentage) + (Double(decimalInterestPercentage) * 0.01)) * 0.01
         
-        print("Interest Rate: \(r)")
+        //print("Interest Rate: \(r)")
         
         let n: Double = 12
         
-        print("Interest is compounded \(n) times a year")
+        //print("Interest is compounded \(n) times a year")
         
         let t = Double(self.pickerView.selectedRowInComponent(0) + 1)
         
-        print("Calculating interest for \(t) years")
+        //print("Calculating interest for \(t) years")
         
-        let PMT = Double(self.monthlyDeposit)
+        let PMT = self.monthlyDeposit
         
-        print("Monthly Payment is \(PMT)")
+        //print("Monthly Payment is \(PMT)")
         
         // P(1+r/n)^nt
         let A = P * pow(( 1 + ( r / n )), (n * t))
@@ -297,23 +343,9 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         // PMT * (((1 + r/n)^nt - 1) / (r/n)) * (1+r/n)
         let FV = PMT * ((pow((1 + r/n), (n * t)) - 1) / (r/n))
         
-        let interestEarned = (A - P) + (FV - PMT * (n * t))
+        self.interestEarned = (A - P) + (FV - PMT * (n * t))
         
-        if let interestEarnedString = formatter.stringFromNumber(interestEarned) {
-            
-            self.interestEarnedLabel.text = "$\(interestEarnedString)"
-            
-        }
-        
-        let amountSaved = (FV + A)
-        
-        if let amountSavedString = formatter.stringFromNumber(amountSaved) {
-            
-            self.amountSavedLabel.text = "$\(amountSavedString)"
-            
-        }
-        
-        print(interestEarned + (FV - PMT * (n * t)))
+        self.amountSaved = (FV + A)
         
         self.updateUI()
         
@@ -321,51 +353,127 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     @IBAction func numberTapped(sender: UIButton) {
         
-        // TODO: - Fix number formatter issue with UI, maybe create a second formatter for initial amount and deposit fields. Changing number format right before update UI can work unless you want to put all UI updating into one function
-        
-        if let initialAmountString = formatter.stringFromNumber(initialAmount), monthlyDepositString = formatter.stringFromNumber(monthlyDeposit) {
+        if self.valueToChange == "Initial Amount" {
             
-            if self.labelToChange == "Initial Amount" {
+            if self.initialAmountDecimalIsTapped == true {
                 
-                if initialAmountString.characters.count < 9 {
+                if self.InitialAmountfractionalDigitTaps < 2 {
                     
-                    self.initialAmount = (initialAmount * 10) + Double(sender.tag)
+                    if self.InitialAmountfractionalDigitTaps == 0 {
+                        
+                        self.initialAmountFractionalDigits = Double(sender.tag) * 10
+                        
+                    }
+                    
+                    if self.InitialAmountfractionalDigitTaps == 1 {
+                        
+                        self.initialAmountFractionalDigits = self.initialAmountFractionalDigits + Double(sender.tag)
+                        
+                    }
+                    
+                    self.InitialAmountfractionalDigitTaps += 1
                     
                 }
                 
             } else {
                 
-                if monthlyDepositString.characters.count < 9 {
+                if self.initialAmountIntegerTaps < 9 {
                     
-                    self.monthlyDeposit = (monthlyDeposit * 10) + Double(sender.tag)
+                    self.initialAmountIntegers = (self.initialAmount * 10) + Double(sender.tag)
+                    
+                    self.initialAmountIntegerTaps += 1
+                    
+                }
+            }
+        }
+        
+        if valueToChange == "Monthly Deposit" {
+            
+            if monthlyDepositDecimalIsTapped == true {
+                
+                if self.monthlyDepositFractionalDigitTaps < 2 {
+                    
+                    if self.monthlyDepositFractionalDigitTaps == 0 {
+                        
+                        self.monthlyDepositFractionalDigits = Double(sender.tag) * 10
+                        
+                    }
+                    
+                    if self.monthlyDepositFractionalDigitTaps == 1 {
+                        
+                        self.monthlyDepositFractionalDigits = self.monthlyDepositFractionalDigits + Double(sender.tag)
+                        
+                    }
+                    
+                    self.monthlyDepositFractionalDigitTaps += 1
                     
                 }
                 
+            } else {
+                
+                if self.monthlyDepositIntegerTaps < 9 {
+                    
+                    self.monthlyDepositIntegers = (self.monthlyDeposit * 10) + Double(sender.tag)
+                    
+                    self.monthlyDepositIntegerTaps += 1
+                    
+                }
             }
-            
-            self.calculate()
-            
         }
+        
+        self.calculate()
         
     }
     
     @IBAction func decimalTapped(sender: UIButton) {
         
-        print("decimal tapped")
+        if self.valueToChange == "Initial Amount" {
+            
+            self.initialAmountDecimalIsTapped = true
+            self.initialAmountFormatter.minimumFractionDigits = 2
+            
+        }
+        
+        if self.valueToChange == "Monthly Deposit" {
+            
+            self.monthlyDepositDecimalIsTapped = true
+            self.monthlyDepositFormatter.minimumFractionDigits = 2
+            
+        }
+        
         
         self.updateUI()
+        
         
     }
     
     @IBAction func clearTapped(sender: UIButton) {
         
-        if self.labelToChange == "Monthly Deposit" {
+        if self.valueToChange == "Monthly Deposit" {
             
-            self.monthlyDeposit = 0
+            self.monthlyDepositFormatter.minimumFractionDigits = 0
             
-        } else {
+            self.monthlyDepositDecimalIsTapped = false
             
-            self.initialAmount = 0
+            self.monthlyDepositIntegers = 0
+            self.monthlyDepositFractionalDigits = 0
+            
+            self.monthlyDepositIntegerTaps = 0
+            self.monthlyDepositFractionalDigitTaps = 0
+            
+        }
+        
+        if self.valueToChange == "Initial Amount" {
+            
+            self.initialAmountFormatter.minimumFractionDigits = 0
+            
+            self.initialAmountDecimalIsTapped = false
+            
+            self.initialAmountIntegers = 0
+            self.initialAmountFractionalDigits = 0
+            
+            self.initialAmountIntegerTaps = 0
+            self.InitialAmountfractionalDigitTaps = 0
             
         }
         
@@ -376,7 +484,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     @IBAction func monthlyDepositButtonTapped(sender: UIButton) {
         
         self.initialAmountButton.backgroundColor = .clearColor()
-        self.labelToChange = "Monthly Deposit"
+        self.valueToChange = "Monthly Deposit"
         self.monthlyDepositButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
         
     }
@@ -385,7 +493,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     @IBAction func initialAmountButtonTapped(sender: UIButton) {
         
         self.monthlyDepositButton.backgroundColor = .clearColor()
-        self.labelToChange = "Initial Amount"
+        self.valueToChange = "Initial Amount"
         self.initialAmountButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
         
     }
