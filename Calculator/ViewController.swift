@@ -46,13 +46,13 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     var years: Double = 0
     var interestPercentage: Double = 0
     var decimalInterestPerentage: Double = 0
+    var interestEarned: Double = 0
+    var amountSaved: Double = 0
     
     let formatter = NSNumberFormatter()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        formatter.minimumIntegerDigits = 2
         
         self.initialAmountButton.backgroundColor = UIColor(red:0.40, green:0.40, blue:0.40, alpha:1.00)
         
@@ -92,6 +92,8 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     }
     
     func pickerView(pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusingView view: UIView?) -> UIView {
+        
+        
         
         var label = view as! UILabel!
         if label == nil {
@@ -133,11 +135,14 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
             
         } else {
             
-            let data = decimalPercentages[row]
+            let data = Double(decimalPercentages[row]) * 0.01
+            
+            formatter.maximumIntegerDigits = 0
+            formatter.minimumFractionDigits = 2
             
             if let dataString = formatter.stringFromNumber(data) {
                 
-                let titleString = ".\(dataString)%"
+                let titleString = "\(dataString)%"
                 
                 let title = NSAttributedString(string: titleString, attributes: [
                     
@@ -196,43 +201,127 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     func updateUI() {
         
-        if let initialAmountString = formatter.stringFromNumber(initialAmount) {
+        formatter.maximumIntegerDigits = 10
+        
+        if self.initialAmount == 0 {
             
-            self.initialAmountLabel.text = initialAmountString
+            self.initialAmountLabel.text = ""
+            
+        } else {
+            
+            if let initialAmountString = formatter.stringFromNumber(initialAmount) {
+                
+                self.initialAmountLabel.text = initialAmountString
+                
+            }
             
         }
         
-        self.monthlyDepositLabel.text = "\(self.monthlyDeposit)"
+        if self.monthlyDeposit == 0 {
+            
+            self.monthlyDepositLabel.text = ""
+            
+        } else {
+            
+            self.monthlyDepositLabel.text = "\(self.monthlyDeposit)"
+            
+        }
         
         let years = self.pickerView.selectedRowInComponent(0) + 1
         
         let interestPercentage = self.pickerView.selectedRowInComponent(1) + 1
         
-        let decimalInterestPerentage = self.pickerView.selectedRowInComponent(2)
+        let decimalInterestPerentage: Double = Double(self.pickerView.selectedRowInComponent(2)) * 0.01
         
-        if let decimalInterestPercentageString = self.formatter.stringFromNumber(decimalInterestPerentage) {
+        let interestRate = Double(interestPercentage) + Double(decimalInterestPerentage)
+        
+        if let interestRateString = formatter.stringFromNumber(interestRate) {
             
-            self.yearsToSaveLabel.text = "\(years)"
-            
-            self.annualInterestLabel.text = "\(interestPercentage).\(decimalInterestPercentageString)%"
+            self.annualInterestLabel.text = "\(interestRateString)%"
             
         }
+        
+        self.yearsToSaveLabel.text = "\(years)"
+
         
     }
     
     func calculate() {
         
-        let years = self.pickerView.selectedRowInComponent(0) + 1
+        formatter.minimumIntegerDigits = 1
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 2
+        
         let interestPercentage = self.pickerView.selectedRowInComponent(1) + 1
         let decimalInterestPercentage = self.pickerView.selectedRowInComponent(2)
         
+        /*
+         
+         Compound interest for principal:
+         P(1+r/n)^nt
+         
+         Future value of a series:
+         PMT * (((1 + r/n)^nt - 1) / (r/n)) * (1+r/n)
+         
+         A = the future value of the investment/loan, including interest
+         P = the principal investment amount (the initial deposit or loan amount)
+         PMT = the monthly payment
+         r = the annual interest rate (decimal)
+         n = the number of times that interest is compounded per year AND additional payment frequency
+         t = the number of years the money is invested or borrowed for
+         
+         */
+        let P = Double(self.initialAmount)
+        
+        print("Principal: \(P)")
+        
+        let r: Double = (Double(interestPercentage) + (Double(decimalInterestPercentage) * 0.01)) * 0.01
+        
+        print("Interest Rate: \(r)")
+        
+        let n: Double = 12
+        
+        print("Interest is compounded \(n) times a year")
+        
+        let t = Double(self.pickerView.selectedRowInComponent(0) + 1)
+        
+        print("Calculating interest for \(t) years")
+        
+        let PMT = Double(self.monthlyDeposit)
+        
+        print("Monthly Payment is \(PMT)")
+        
+        // P(1+r/n)^nt
+        let A = P * pow(( 1 + ( r / n )), (n * t))
+        
+        // PMT * (((1 + r/n)^nt - 1) / (r/n)) * (1+r/n)
+        let FV = PMT * ((pow((1 + r/n), (n * t)) - 1) / (r/n))
+        
+        let interestEarned = (A - P) + (FV - PMT * (n * t))
+        
+        if let interestEarnedString = formatter.stringFromNumber(interestEarned) {
+            
+            self.interestEarnedLabel.text = "$\(interestEarnedString)"
+            
+        }
+        
+        let amountSaved = (FV + A)
+        
+        if let amountSavedString = formatter.stringFromNumber(amountSaved) {
+            
+            self.amountSavedLabel.text = "$\(amountSavedString)"
+            
+        }
+        
+        print(interestEarned + (FV - PMT * (n * t)))
         
         self.updateUI()
-        
         
     }
     
     @IBAction func numberTapped(sender: UIButton) {
+        
+        // TODO: - Fix number formatter issue with UI, maybe create a second formatter for initial amount and deposit fields. Changing number format right before update UI can work unless you want to put all UI updating into one function
         
         if let initialAmountString = formatter.stringFromNumber(initialAmount), monthlyDepositString = formatter.stringFromNumber(monthlyDeposit) {
             
@@ -254,7 +343,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                 
             }
             
-            self.updateUI()
+            self.calculate()
             
         }
         
@@ -280,7 +369,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
             
         }
         
-        self.updateUI()
+        self.calculate()
         
     }
     
